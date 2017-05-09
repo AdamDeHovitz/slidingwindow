@@ -1,0 +1,58 @@
+Running and installing:
+    I decided to use maven as my build tool here, mostly because I'm very familiar with it from TAing cs0320.
+    You can download mvn using "brew install maven". More in-depth instructions at this guide
+    http://cs.brown.edu/courses/cs0320/docs/work-from-home.html (which I helped write!)
+    Once setup, you use mvn test to run the junit tests or mvn package to compile an execuetable (which won't be very
+    useful right now).
+
+
+Questions:
+
+- the data structures you chose to implement your submission, and why you chose them, along with
+  any trade-offs they may make.
+  I started with an ArrayList, (the source code for that is included), but there was a high cost for slicing to remove
+  the elements earlier than an hour. I switched to Java's implementation of a doubly linked list since it allowed for
+  constant add, easy iteration from the back (for small time frames), and cheap removal of elements from the front that
+  occurred more than an hour ago.
+
+- the assumptions you made about input data, rates of events, and sizes of memory required to
+  implement your code efficiently.
+
+  I assumed that calls to all commands would be relatively balanced, and that increment would be fairly consistently
+  used on the scale of seconds. Because of this, I assumed that it wouldn't be too difficult to find all elements
+  within the last second/minute by iterating from the back, since they should be clumped near that end. If I hadn't
+  made this assumption it would have been smarter to use a binary search (O(logn))to find the break points where we've
+  surpassed a second/minute/hour. I also assumed that memory on this scale wasn't a huge consideration, and thus
+  relatively infrequent removal of irrelevant data (events older than an hour) would be ok. In this case we only remove
+  old data when search for elements in the max time frame, in an attempt to kill two birds with one stone. An
+  alternative would've been to remove old data on increment, or to even create a timer that periodically cut data
+  (though this would require a concurrency update).
+
+- how your code might be extended to include support for longer windows of time.
+
+  It's really easy since numSinceTimeFromEnd can take in any time (in milliseconds). My TestManual demonstrates this.
+  numSinceMaxTime is similarly flexible, however the user should only use it for the max time or risk deleting relevant
+  data. The one issue though is that these methods only perform well on data near their appropriate end. If we start
+  wanting data in the middle we'd want some sort of binary search, at which point we'd want to return to an ArrayList
+  or similar data structure.
+
+- what would happen to your code if the event rate (calls to `increment()`) is:
+  - extremely large
+
+    The linkedlist would grow extremely large and would not be trim until a call to numSinceMaxTime is made. One
+    solution is to use our internal size method and querying the first element to determine if we should make a cut
+    despite the lack of calls to numSinceMaxTime. Also, calls to numLastSecond and more so numLastMinute might start
+    taking too long as more elements need to be iterated over. Our assumption that the first time older than our window
+    is near the end would no longer be as valid.
+
+  - extremely bursty
+
+    It may make our assumption about the first time older than our window being near the end invalid right after bursts,
+    but in moments of quiet that call would return very quickly.
+
+- any other considerations you might wish to include.
+
+    We may want to updated SlidingWindow to support synchronized operations. Additionally while I do like how easy it is
+    to remove elements at the front of the list using a linkedlist, ArrayList or something similar would likely be more
+    robust and scalable. Certainly allowing for the use of a binary search would be a lot more useful on large rates
+    of events.
